@@ -1,0 +1,66 @@
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+
+# Data: Number of basis functions and corresponding calculation times  ##### Copy-paste here
+basis_functions = np.array([38, 57, 76])  
+times = np.array([0.9228827953338623, 1.0332505702972412, 1.140352725982666])
+
+# New basis function values to extrapolate to (will predict a time for the new # of basis functions) ##### Copy-paste here
+new_basis_functions = np.array([380, 500, 600])
+
+# Take the logarithm of both basis functions and times
+log_basis = np.log10(basis_functions)
+log_times = np.log10(times)
+
+# Perform linear regression on the log-transformed data
+slope, intercept = np.polyfit(log_basis, log_times, 1)
+
+# Function to extrapolate for new values of n (basis functions)
+def extrapolate_time(n_new):
+    # Predict log(T) using the linear model (log(T) = intercept + slope * log(n))
+    log_T_pred = intercept + slope * np.log10(n_new)
+    # Convert back from log scale to original time scale
+    T_pred = 10**log_T_pred
+    
+    # Loop through both n_new and T_pred using zip to print the predicted times
+    for n, T in zip(n_new, T_pred):
+        print(f"Predicted time for {n} basis functions is: {T:.2f} seconds")
+    
+    return T_pred
+
+# Extrapolate the times for the new basis function values
+extrapolated_times = extrapolate_time(new_basis_functions)
+
+# Combine old and new basis function values and times for plotting the extended LSRL
+combined_basis_functions = np.concatenate((basis_functions, new_basis_functions))
+log_combined_basis = np.log10(combined_basis_functions)
+
+# Plot the original data points
+plt.scatter(log_basis, log_times, color='blue', label='Original Data')
+
+# Plot the extrapolated points in log space
+log_new_basis = np.log10(new_basis_functions)
+log_extrapolated_times = np.log10(extrapolated_times)
+plt.scatter(log_new_basis, log_extrapolated_times, color='green', label='Extrapolated Points')
+
+# Plot the extended regression line (LSRL) up to the furthest extrapolated point
+log_combined_regression_line = slope * log_combined_basis + intercept
+plt.plot(log_combined_basis, log_combined_regression_line, color='red', label=f'LSRL: y = {slope:.2f}x + {intercept:.2f}')
+
+# Add labels, title, and legend
+plt.xlabel('log(# of Basis Functions)')
+plt.ylabel('log(Time)')
+plt.title('Log-Log Plot: Basis Functions vs Time with Extrapolation')
+plt.legend()
+
+
+
+# Show the extrapolated times as text on the graph in original scale (non-log form)
+for i, n in enumerate(new_basis_functions):
+    T = extrapolated_times[i]
+    plt.text(np.log10(n), np.log10(T), f'{T:.2f} sec', fontsize=10, color='black')
+
+# Show the plot
+plt.show()
