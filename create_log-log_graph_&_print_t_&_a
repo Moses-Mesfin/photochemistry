@@ -1,0 +1,43 @@
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+
+# Data: Number of basis functions and corresponding calculation times  ##### Copy-paste here
+basis_functions = np.array([38, 57, 76, 190, 266, 342, 418, 570])  
+times = np.array([0.9228827953338623, 1.0332505702972412, 1.140352725982666, 3.132958173751831, 6.81151270866394, 13.49186658859253, 26.40183734893799, 74.49812960624695])
+
+
+
+# Take the logarithm of both basis functions and times
+log_basis = np.log10(basis_functions)
+log_times = np.log10(times)
+
+# Perform linear regression on the log-transformed data
+slope, intercept = np.polyfit(log_basis, log_times, 1)
+
+# T = t * n^a  ->  logT = logt + a(logn)
+t = 10**intercept
+a = slope
+print(f"T=t*n^a, t={t} a={a}")
+
+# Plot the original data points
+plt.scatter(log_basis, log_times, color='blue', label='Original Data')
+
+# Plot the extended regression line (LSRL)
+log_regression_line = slope * log_basis + intercept
+plt.plot(log_basis, log_regression_line, color='red', label=f'LSRL: y = {slope:.2f}x + {intercept:.2f}\n')
+
+#plot the t and a values
+plt.plot([], [], ' ', label=f'T = t * n^a  -> logT = logt + a(logn)\n t={t:f} a={a:.2f}')
+
+
+# Add labels, title, and legend
+plt.xlabel('log(# of Basis Functions)')
+plt.ylabel('log(Time)')
+plt.title('Log-Log Plot: Basis Functions vs Time')
+plt.legend()
+
+
+# Show the plot
+plt.show()
