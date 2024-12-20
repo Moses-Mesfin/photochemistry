@@ -93,29 +93,18 @@ for n in n_range:
         except subprocess.CalledProcessError as e:
             print(f"Error occurred while running command: {e}")
 
-        # Parses the output file to extract energies for FINAL ENERGY and FINAL Target State Energy.
-        """ Args:
-            file_path (str): Path to the output file.
-
-        Returns:
-            dict: A dictionary with the parsed energies. """
+        # Parses the output file to extract energies for FINAL Target State Energy.
 
         # Define patterns for matching energies
-        final_energy_pattern = r"FINAL ENERGY: ([\-\d\.]+) a\.u\."
         target_energy_pattern = r"FINAL Target State Energy: ([\-\d\.]+) a\.u\."
 
         # Initialize variables to store energies
-        final_energy = None
         target0_energy = None
 
         # Read the file and search for the patterns #?
         with open('test0.out', 'r') as file:
             for line in file:
-                if "FINAL ENERGY" in line:
-                    match = re.search(final_energy_pattern, line)
-                    if match:
-                        final_energy = float(match.group(1))
-                elif "FINAL Target State Energy" in line:
+                if "FINAL Target State Energy" in line:
                     match = re.search(target_energy_pattern, line)
                     if match:
                         target0_energy = float(match.group(1))
@@ -154,7 +143,6 @@ for n in n_range:
             dict: A dictionary with the parsed energies. """
 
         # Define patterns for matching energies
-        final_energy_pattern = r"FINAL ENERGY: ([\-\d\.]+) a\.u\."
         target_energy_pattern = r"FINAL Target State Energy: ([\-\d\.]+) a\.u\."
 
         # Initialize variables to store energies
@@ -163,11 +151,7 @@ for n in n_range:
         # Read the file and search for the patterns #?
         with open('test1.out', 'r') as file:
             for line in file:
-                if "FINAL ENERGY" in line:
-                    match = re.search(final_energy_pattern, line)
-                    if match:
-                        final_energy = float(match.group(1))
-                elif "FINAL Target State Energy" in line:
+                if "FINAL Target State Energy" in line:
                     match = re.search(target_energy_pattern, line)
                     if match:
                         target1_energy = float(match.group(1))
