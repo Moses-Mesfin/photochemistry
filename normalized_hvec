@@ -1,0 +1,29 @@
+import numpy as np
+
+# Raw data from nac.inp
+
+H = """
+  -659.2477115910  -133.9922745004   702.1652459821
+  607.5807282011   478.1393169838   115.6705825689
+  524.1206915308  -346.5936513546  -446.4821452885
+  -433.6374428903   -45.7639797084  -270.6362435338
+  -65.9016442124   481.9550294244  -264.6172598222
+  27.0890413056  -433.7125685033   163.8743404773
+   """
+
+H = [
+    [float(x) for x in line.split()]
+    for line in H.strip().split("\n")
+]
+
+# Calculate the magnitude
+magnitudes = [np.sqrt(sum(x**2 for x in vector)) for vector in H]
+
+# Normalize each component
+normalized_hvec = [
+    [x / mag for x in vector] if mag != 0 else [0, 0, 0]  # Avoid division by zero
+    for vector, mag in zip(H, magnitudes)
+]
+
+# Print normalized vectors for each atom
+print(f"normalized_hvec is:\n {normalized_hvec}\n")
