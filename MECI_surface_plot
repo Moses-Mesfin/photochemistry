@@ -3,12 +3,16 @@ import matplotlib.pyplot as plt
 import re
 import subprocess
 
+# Must have Terachem installed. Also must paste a MECI estimate structure (X0) and calculated gvec (normalized(G1-G0)) and hvec (normalized(H)) into this code
+
 # Constants
 delta = 0.01  # Ångström
 n_range = m_range = np.arange(-3, 4)  # -3 to 3 (7 points)
 
+# To confirm
 print(f"n_range & m_range are 1.{n_range} 2.{m_range}")
 
+# Copy MECI estimate structure here
 X0 = np.array(
 [[-0.0521363790, 0.0762251175, 0.6033823440],
 [-0.3204942388, -0.2299311453, -0.7286417594],
@@ -17,6 +21,7 @@ X0 = np.array(
 [0.9318468604, 0.2627757796, 1.0269360225],
 [-0.8562933751, 0.2706638624, 1.2967304460]])  # reference structure
 
+# Copy calculated gvec (is = normalized(G1-G0)) here
 gvec = np.array([
     [-0.06364999215301473, -0.39479488175728417, 0.9165618799825646],
     [0.6713315626435816, 0.6971661182062572, -0.2515419182238733],
@@ -25,6 +30,7 @@ gvec = np.array([
     [-0.08011324383524747, -0.9755149627477829, -0.20482291282321427],
     [0.07107239994481092, 0.8370505987906567, -0.5424896395603218]])  #  gradient vector
 
+# Copy calculated hvec (is = normalized(H)) here
 hvec = np.array([
     [-0.6779465758093048, -0.1377928236765786, 0.7220814206802955],
     [0.7771943674553277, 0.6116177929457803, 0.14796144953279433],
@@ -33,7 +39,8 @@ hvec = np.array([
     [-0.11900840057753188, 0.8703378783272143, -0.47785874287372887],
     [0.058327503359929735, -0.9338599698391826, 0.3528504769498809]])  #  coupling vector
 
-atom_types = ['c','c','h','h','h','h']
+# Name atoms corresponding to rows (must be in CAPS)
+atom_types = ['C','C','H','H','H','H']
 
 # Create the grid
 X_grid = []
@@ -52,7 +59,6 @@ for n in n_range:
         row_X.append(n)
         row_Y.append(m)
 
-        atom_types = ['C','C','H','H','H','H']
         num_atoms = len(atom_types)
         with open('test0.xyz', "w") as file:
             # Write the number of atoms
