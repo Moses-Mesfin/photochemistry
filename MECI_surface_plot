@@ -1,0 +1,213 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import re
+import subprocess
+
+# Constants
+delta = 0.01  # Ångström
+n_range = m_range = np.arange(-3, 4)  # -3 to 3 (7 points)
+
+print(f"n_range & m_range are 1.{n_range} 2.{m_range}")
+
+X0 = np.array(
+[[-0.0521363790, 0.0762251175, 0.6033823440],
+[-0.3204942388, -0.2299311453, -0.7286417594],
+[0.2195402691, 0.8660224685, -0.7303352721],
+[0.3675511003, -0.7557520997, -1.3780593895],
+[0.9318468604, 0.2627757796, 1.0269360225],
+[-0.8562933751, 0.2706638624, 1.2967304460]])  # reference structure
+
+gvec = np.array([
+    [-0.06364999215301473, -0.39479488175728417, 0.9165618799825646],
+    [0.6713315626435816, 0.6971661182062572, -0.2515419182238733],
+    [-0.6641132149056553, -0.020542599039252044, -0.7473497437026305],
+    [-0.3023078538450683, -0.877375213265141, 0.37258917946115583],
+    [-0.08011324383524747, -0.9755149627477829, -0.20482291282321427],
+    [0.07107239994481092, 0.8370505987906567, -0.5424896395603218]])  #  gradient vector
+
+hvec = np.array([
+    [-0.6779465758093048, -0.1377928236765786, 0.7220814206802955],
+    [0.7771943674553277, 0.6116177929457803, 0.14796144953279433],
+    [0.6799449701309463, -0.449638058038833, -0.5792240105146658],
+    [-0.8449588989012079, -0.0891728390565414, -0.5273449193291376],
+    [-0.11900840057753188, 0.8703378783272143, -0.47785874287372887],
+    [0.058327503359929735, -0.9338599698391826, 0.3528504769498809]])  #  coupling vector
+
+atom_types = ['c','c','h','h','h','h']
+
+# Create the grid
+X_grid = []
+Y_grid = []
+state0_energies = []
+state1_energies = []
+
+for n in n_range:
+    row_X = []
+    row_Y = []
+    row_E0 = []
+    row_E1 = []
+    for m in m_range:
+        # Compute X[n, m]
+        X_nm = X0 + n * gvec * delta + m * hvec * delta
+        row_X.append(n)
+        row_Y.append(m)
+
+        atom_types = ['C','C','H','H','H','H']
+        num_atoms = len(atom_types)
+        with open('test0.xyz', "w") as file:
+            # Write the number of atoms
+            file.write(f"{num_atoms}\n")
+            print(f"{num_atoms}\n")
+            # Write an empty line
+            file.write("\n")
+
+            # Write the coordinates in XYZ format
+            for atom, coords in zip(atom_types, X_nm):
+                x, y, z = coords
+                file.write(f"{atom} {x:.10f} {y:.10f} {z:.10f}\n")
+                print(f"{atom} {x:.10f} {y:.10f} {z:.10f}")
+
+        with open('test0.inp', 'w') as file:
+            file.write('''
+            gpus             1
+            run              gradient
+            coordinates     test0.xyz
+            charge               0
+            spinmult             1
+            precision            mixed
+            basis                6-31g
+            method               rhf
+
+            # casscf parameters
+            casscf               yes
+            cassinglets          2
+            active               2 # number of pi orbitals
+            casnumelec           2 # number of pi electrons
+            castarget            0
+            castargetmult        1''')
+
+        command = f"terachem {'test0.inp'} > {'test0.out'}"
+        try:
+            subprocess.run(command, shell=True, check=True)
+            print(f"Command executed successfully: {command}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error occurred while running command: {e}")
+
+        # Parses the output file to extract energies for FINAL ENERGY and FINAL Target State Energy.
+        """ Args:
+            file_path (str): Path to the output file.
+
+        Returns:
+            dict: A dictionary with the parsed energies. """
+
+        # Define patterns for matching energies
+        final_energy_pattern = r"FINAL ENERGY: ([\-\d\.]+) a\.u\."
+        target_energy_pattern = r"FINAL Target State Energy: ([\-\d\.]+) a\.u\."
+
+        # Initialize variables to store energies
+        final_energy = None
+        target0_energy = None
+
+        # Read the file and search for the patterns #?
+        with open('test0.out', 'r') as file:
+            for line in file:
+                if "FINAL ENERGY" in line:
+                    match = re.search(final_energy_pattern, line)
+                    if match:
+                        final_energy = float(match.group(1))
+                elif "FINAL Target State Energy" in line:
+                    match = re.search(target_energy_pattern, line)
+                    if match:
+                        target0_energy = float(match.group(1))
+
+        with open('test1.inp', 'w') as file:
+            file.write('''
+            gpus             1
+            run              gradient
+            coordinates     test0.xyz
+            charge               0
+            spinmult             1
+            precision            mixed
+            basis                6-31g
+            method               rhf
+
+            # casscf parameters
+            casscf               yes
+            cassinglets          2
+            active               2 # number of pi orbitals
+            casnumelec           2 # number of pi electrons
+            castarget            1
+            castargetmult        1''')
+
+        command = f"terachem {'test1.inp'} > {'test1.out'}"
+        try:
+            subprocess.run(command, shell=True, check=True)
+            print(f"Command executed successfully: {command}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error occurred while running command: {e}")
+
+        # Parses the output file to extract energies for FINAL ENERGY and FINAL Target State Energy.
+        """ Args:
+            file_path (str): Path to the output file.
+
+        Returns:
+            dict: A dictionary with the parsed energies. """
+
+        # Define patterns for matching energies
+        final_energy_pattern = r"FINAL ENERGY: ([\-\d\.]+) a\.u\."
+        target_energy_pattern = r"FINAL Target State Energy: ([\-\d\.]+) a\.u\."
+
+        # Initialize variables to store energies
+        target_1energy = None
+
+        # Read the file and search for the patterns #?
+        with open('test1.out', 'r') as file:
+            for line in file:
+                if "FINAL ENERGY" in line:
+                    match = re.search(final_energy_pattern, line)
+                    if match:
+                        final_energy = float(match.group(1))
+                elif "FINAL Target State Energy" in line:
+                    match = re.search(target_energy_pattern, line)
+                    if match:
+                        target1_energy = float(match.group(1))
+        
+        row_E0.append(target0_energy)
+        row_E1.append(target1_energy)
+
+    X_grid.append(row_X)
+    Y_grid.append(row_Y)
+    state0_energies.append(row_E0)
+    state1_energies.append(row_E1)
+
+# Convert to NumPy arrays
+X_grid = np.array(X_grid)
+Y_grid = np.array(Y_grid)
+state0_energies = np.array(state0_energies)
+state1_energies = np.array(state1_energies)
+
+print(f"x_grid is {X_grid}")
+print(f"y_grid is {Y_grid}")
+print(f"state0_energies is {state0_energies}")
+print(f"state1_energies is {state1_energies}")
+
+# Plot the combined energy surfaces
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection='3d')
+
+# Surface plot for state 0
+surface0 = ax.plot_surface(X_grid, Y_grid, state0_energies, cmap='viridis', alpha=0.8)
+# Surface plot for state 1
+surface1 = ax.plot_surface(X_grid, Y_grid, state1_energies, cmap='plasma', alpha=0.8)
+
+# Add colorbars for the surfaces
+fig.colorbar(surface0, ax=ax, shrink=0.5, aspect=10, label='State 0 Energy')
+fig.colorbar(surface1, ax=ax, shrink=0.5, aspect=10, label='State 1 Energy')
+
+# Set labels and title
+ax.set_title('Combined Energy Surfaces')
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Energy')
+
+plt.show()
