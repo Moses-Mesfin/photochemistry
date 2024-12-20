@@ -1,43 +1,91 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import stats
-
-# Data: Number of basis functions and corresponding calculation times  ##### Copy-paste here
-basis_functions = np.array([38, 57, 76, 190, 266, 342, 418, 570])  
-times = np.array([0.9228827953338623, 1.0332505702972412, 1.140352725982666, 3.132958173751831, 6.81151270866394, 13.49186658859253, 26.40183734893799, 74.49812960624695])
+from matplotlib.ticker import ScalarFormatter, LogLocator
 
 
+# Data: Multiple sets of basis functions and corresponding calculation times
+datasets = {
+    'Psi4 - HF/6-31g': {
+        'basis_functions': np.array([190, 418, 570]),
+        'times': np.array([3.0798563957214355, 26.599169492721558, 71.88333511352539]),
+    },
+    'Terachem - CAASCF + HF /6-31g': {
+        'basis_functions': np.array([190, 418, 570]),
+        'times': np.array([1.18, 3.17, 5.29]),
+    },
+    'Terachem - HF/6-31g': {
+        'basis_functions': np.array([190, 418, 570]),
+        'times': np.array([0.16, 0.42, 0.67]),
+    }
+    
+}
 
-# Take the logarithm of both basis functions and times
-log_basis = np.log10(basis_functions)
-log_times = np.log10(times)
+plt.figure(figsize=(10, 6))
 
-# Perform linear regression on the log-transformed data
-slope, intercept = np.polyfit(log_basis, log_times, 1)
+plt.plot([], [], ' ', label=f'T = t * n^a  -> logT = logt + a(logn)')
 
-# T = t * n^a  ->  logT = logt + a(logn)
-t = 10**intercept
-a = slope
-print(f"T=t*n^a, t={t} a={a}")
+for label, data in datasets.items():
+    basis_functions = data['basis_functions']
+    times = data['times']
+    
+    # Take the logarithm of both basis functions and times
+    log_basis = np.log10(basis_functions)
+    log_times = np.log10(times)
 
-# Plot the original data points
-plt.scatter(log_basis, log_times, color='blue', label='Original Data')
+    # Perform linear regression on the log-transformed data
+    slope, intercept = np.polyfit(log_basis, log_times, 1)
 
-# Plot the extended regression line (LSRL)
-log_regression_line = slope * log_basis + intercept
-plt.plot(log_basis, log_regression_line, color='red', label=f'LSRL: y = {slope:.2f}x + {intercept:.2f}\n')
+    # Extract t and a from the regression results
+    t = 10**intercept  # Convert the intercept back to the original scale
+    a = slope  # Slope remains the same
 
-#plot the t and a values
-plt.plot([], [], ' ', label=f'T = t * n^a  -> logT = logt + a(logn)\n t={t:f} a={a:.2f}')
+    # Plot the original data points
+    scatter = plt.scatter(basis_functions, times)
 
+    # Generate a smooth set of x-values across the range of basis_functions
+    smooth_x = np.linspace(min(basis_functions), max(basis_functions), 500)
+
+    # Calculate the LSRL for the smooth x-values: y = t * x^a
+    regression_line = t * smooth_x**a
+
+    predicted_values = t * basis_functions**a
+    # Compute the residuals (difference between actual and predicted)
+    residuals = times - predicted_values
+
+    # Calculate R^2
+    ss_residual = np.sum(residuals**2)
+    ss_total = np.sum((times - np.mean(times))**2)
+    r_squared = 1 - (ss_residual / ss_total)
+
+    # Plot the smooth LSRL
+    plt.plot(smooth_x, regression_line, label=f'{label}= LSRL: y = {t:.2f} * x^{a:.2f} | t={t:f} a={a:.2f} | R^2 = {r_squared:.5f}', color=scatter.get_edgecolor())
+
+# Set both axes to log scale
+plt.xscale('log')
+plt.yscale('log')
+
+# Format the tick labels to display normal numbers
+ax = plt.gca()  # Get current axis
+ax.xaxis.set_major_formatter(ScalarFormatter(useOffset=False))
+ax.yaxis.set_major_formatter(ScalarFormatter(useOffset=False))
+
+# Set major ticks for the x-axis
+x_ticks = [200, 300, 400, 500, 600]
+ax.set_xticks(x_ticks)
+ax.set_xticklabels(x_ticks)
+
+y_ticks = [1, 5, 10, 50, 100, 500]
+ax.set_yticks(y_ticks)
+ax.set_yticklabels(y_ticks)
+
+# Set major ticks for the y-axis automatically
+ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=10))  # Major ticks
 
 # Add labels, title, and legend
-plt.xlabel('log(# of Basis Functions)')
-plt.ylabel('log(Time)')
-plt.title('Log-Log Plot: Basis Functions vs Time')
+plt.xlabel('# of Basis Functions')
+plt.ylabel('Time (s)')
+plt.title('Log-Scaled Plot: Basis Functions vs Time for Psi4/Laptop V.S. Terachem/GPU')
 plt.legend()
-
 
 # Show the plot
 plt.show()
