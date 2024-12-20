@@ -1,0 +1,54 @@
+import numpy as np
+
+G0 = """
+    0.0072031100     0.0433450290    -0.1007651175
+   -0.0780099094    -0.0809653329     0.0291152641
+    0.0612120244     0.0020172211     0.0692405975
+    0.0087363618     0.0249334892    -0.0104928588
+    0.0019192661     0.0229018132     0.0049321987
+   -0.0010608532    -0.0122322194     0.0079699163
+"""
+
+# Process the input into the desired format
+G0 = [
+    [float(x) for x in line.split()]
+    for line in G0.strip().split("\n")
+]
+""" print('G0 is:')
+print(f"{G0}\n") """
+
+G1 = """
+   -0.0008763398    -0.0067684953     0.0155792126
+    0.0120279600     0.0125374240    -0.0046211184
+   -0.0098373178    -0.0001805038    -0.0107137032
+   -0.0011975037    -0.0038971457     0.0017504579
+   -0.0002732346    -0.0037956108    -0.0006732962
+    0.0001564365     0.0021043314    -0.0013215534
+"""
+
+# Process the input into the desired format
+G1 = [
+    [float(x) for x in line.split()]
+    for line in G1.strip().split("\n")
+]
+""" print('G1 is:')
+print(f"{G1}\n") """
+
+# Compute the difference G1 - G0
+G = [[g1 - g0 for g0, g1 in zip(atom_G0, atom_G1)] for atom_G0, atom_G1 in zip(G0, G1)]
+""" print('G (is = G1 - G0):')
+print(f"{G}\n") """
+
+# Calculate the magnitude
+magnitudes = [np.sqrt(sum(x**2 for x in vector)) for vector in G]
+
+
+# Normalize each component
+normalized_gvec = [
+    [x / mag for x in vector] if mag != 0 else [0, 0, 0]  # Avoid division by zero
+    for vector, mag in zip(G, magnitudes)
+]
+
+
+# Print normalized gvec for each atom
+print(f"normalized_gvec is {normalized_gvec}")
